@@ -1,0 +1,9 @@
+FastAPI==0.115.0
+uvicorn==0.30.0
+SQLAlchemy==2.0.32
+pydantic==2.7.0
+pydantic-settings==2.3.0
+email-validator==2.1.0
+qrcode==7.4.2
+pillow==10.1.0
+python-multipart==0.0.6
