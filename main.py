@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import create_tables
 from app.routes import api_router
+import os
 
 # Create tables on startup
 create_tables()
@@ -28,15 +30,19 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    """Root endpoint - API info."""
-    return {
-        "message": "Welcome to Food Shop API",
-        "version": settings.PROJECT_VERSION,
-        "docs": f"{settings.API_V1_STR}/docs",
-        "qr_display": "/qr/foods/qr/display"
-    }
+    """Root endpoint - serves the frontend."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "index.html"), "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return {
+            "message": "Welcome to Food Shop API",
+            "version": settings.PROJECT_VERSION,
+            "docs": f"{settings.API_V1_STR}/docs",
+            "frontend": "Frontend not found. Please ensure index.html is in the root directory."
+        }
 
 
 @app.get("/health")
@@ -363,4 +369,4 @@ def qr_foods_display():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
