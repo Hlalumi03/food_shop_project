@@ -118,3 +118,15 @@ class QRCodeService:
         """Generate QR code for an order as base64."""
         url = f"{settings.API_BASE_URL}/orders/{order_id}"
         return QRCodeService.generate_qr_code_base64(url)
+
+    @staticmethod
+    def generate_website_qr_code() -> io.BytesIO:
+        """Generate QR code that points to the website root."""
+        url = f"{settings.API_BASE_URL}/"
+        return QRCodeService.generate_qr_code(url)
+
+    @staticmethod
+    def generate_website_qr_code_base64() -> str:
+        """Generate QR code for the website root as base64."""
+        url = f"{settings.API_BASE_URL}/"
+        return QRCodeService.generate_qr_code_base64(url)

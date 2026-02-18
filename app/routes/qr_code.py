@@ -147,6 +147,44 @@ def get_food_qr_page(
     return html
 
 
+@router.get("/website/qr", response_class=Response)
+def get_website_qr():
+    """Generate a QR code that links to the website root."""
+    qr_code = QRCodeService.generate_website_qr_code()
+    return Response(content=qr_code.getvalue(), media_type="image/png")
+
+
+@router.get("/website/qr/page", response_class=HTMLResponse)
+def get_website_qr_page():
+    """Return a simple HTML page showing the website QR code and a link."""
+    qr_base64 = QRCodeService.generate_website_qr_code_base64()
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Website QR Code</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:#f6f7fb }}
+            .card {{ background:white; padding:24px; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.08); text-align:center; max-width:420px }}
+            .qr img {{ width:260px; height:auto }}
+            .link {{ display:inline-block; margin-top:16px; padding:10px 16px; background:#667eea; color:white; text-decoration:none; border-radius:6px }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>Visit Our Website</h2>
+            <div class="qr"><img src="{qr_base64}" alt="Website QR"></div>
+            <a class="link" href="/">Open Website</a>
+            <p style="margin-top:12px;color:#666;font-size:13px">Scan this QR with your phone to open the website.</p>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
 @router.get("/orders/{order_id}/qr", response_class=Response)
 def get_order_qr_code(
     order_id: int,
