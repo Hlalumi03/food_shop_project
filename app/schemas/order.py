@@ -16,6 +16,7 @@ class OrderCreate(BaseModel):
     customer_name: str = Field(..., min_length=1, max_length=255)
     customer_email: EmailStr
     items: List[OrderItemIn]
+    promotion_code: Optional[str] = Field(None, min_length=1, max_length=50)
 
 
 class OrderUpdate(BaseModel):

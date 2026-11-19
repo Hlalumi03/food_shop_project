@@ -334,6 +334,33 @@
             font-weight: 600;
         }
 
+        .cart-quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .quantity-btn {
+            width: 26px;
+            height: 26px;
+            border: 1px solid #667eea;
+            border-radius: 6px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .quantity-btn:disabled {
+            border-color: #ddd;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+
         .remove-btn {
             background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
             color: white;
@@ -625,6 +652,7 @@
             margin-bottom: 20px;
             font-size: 14px;
             line-height: 1.6;
+            white-space: pre-line;
         }
 
         .modal-close-btn {
@@ -726,12 +754,12 @@
 
                     <div class="form-group">
                         <label>Customer Name</label>
-                        <input type="text" id="customerName" placeholder="Your name" required>
+                        <input type="text" id="customerName" placeholder="Your name" autocomplete="name" required>
                     </div>
 
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" id="customerEmail" placeholder="your@email.com" required>
+                        <input type="email" id="customerEmail" placeholder="your@email.com" autocomplete="email" required>
                     </div>
 
                     <div class="form-group">
@@ -836,7 +864,7 @@
                     <div class="food-price">$${food.price.toFixed(2)}</div>
                     <div class="food-stock">Stock: ${food.stock}</div>
                     <div class="food-actions">
-                        <input type="number" class="qty-input" value="1" min="1" max="${food.stock}" 
+                        <input type="number" class="qty-input" value="1" min="1" step="1" max="${food.stock}" 
                                id="qty-${food.id}" ${food.stock === 0 ? 'disabled' : ''}>
                         <button class="add-btn" onclick="addToCart(${food.id})" 
                                 ${food.stock === 0 ? 'disabled' : ''}>
@@ -912,14 +940,24 @@
         function addToCart(foodId) {
             const food = allFoods.find(f => f.id === foodId);
             const qtyInput = document.getElementById(`qty-${foodId}`);
-            const quantity = parseInt(qtyInput.value);
+            const quantity = Number(qtyInput.value);
 
-            if (quantity <= 0) {
-                alert('Please enter a valid quantity');
+            if (!food || !Number.isInteger(quantity) || quantity <= 0) {
+                showCheckoutMessage('Please enter a valid whole-number quantity.', 'error');
                 return;
             }
 
             const existingItem = cart.find(item => item.food_id === foodId);
+            const quantityInCart = existingItem ? existingItem.quantity : 0;
+            if (quantityInCart + quantity > food.stock) {
+                showCheckoutMessage(
+                    `Only ${Math.max(0, food.stock - quantityInCart)} more ${food.name} available.`,
+                    'error'
+                );
+                return;
+            }
+
+            clearPromotionForCartChange();
             
             if (existingItem) {
                 existingItem.quantity += quantity;
@@ -934,12 +972,33 @@
 
             updateCart();
             qtyInput.value = 1;
+            showCheckoutMessage(`${food.name} added to your cart.`, 'success');
+        }
+
+        function changeCartQuantity(foodId, change) {
+            const item = cart.find(cartItem => cartItem.food_id === foodId);
+            const food = allFoods.find(menuItem => menuItem.id === foodId);
+            if (!item || !food) return;
+
+            const quantity = item.quantity + change;
+            if (quantity < 1 || quantity > food.stock) return;
+
+            clearPromotionForCartChange();
+            item.quantity = quantity;
+            updateCart();
         }
 
         // Remove item from cart
         function removeFromCart(foodId) {
+            clearPromotionForCartChange();
             cart = cart.filter(item => item.food_id !== foodId);
             updateCart();
+        }
+
+        function clearPromotionForCartChange() {
+            if (!appliedPromotion) return;
+            appliedPromotion = null;
+            document.getElementById('appliedPromotion').innerHTML = '';
         }
 
         // Update cart display
@@ -953,39 +1012,52 @@
                 cartItems.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
                 cartTotal.style.display = 'none';
                 checkoutBtn.disabled = true;
+                document.getElementById('checkoutMessage').textContent = '';
+                document.getElementById('checkoutMessage').className = 'message';
                 return;
             }
 
             let subtotal = 0;
             cartItems.innerHTML = cart.map(item => {
                 const itemTotal = item.price * item.quantity;
+                const food = allFoods.find(menuItem => menuItem.id === item.food_id);
                 subtotal += itemTotal;
                 return `
                     <div class="cart-item">
                         <div class="cart-item-info">
                             <div class="cart-item-name">${item.name}</div>
-                            <div class="cart-item-price">${item.quantity} x $${item.price.toFixed(2)}</div>
+                            <div class="cart-item-price">${item.quantity} × $${item.price.toFixed(2)} = $${itemTotal.toFixed(2)}</div>
+                            <div class="cart-quantity-controls">
+                                <button class="quantity-btn" onclick="changeCartQuantity(${item.food_id}, -1)"
+                                        aria-label="Remove one ${item.name}" ${item.quantity <= 1 ? 'disabled' : ''}>−</button>
+                                <span>${item.quantity}</span>
+                                <button class="quantity-btn" onclick="changeCartQuantity(${item.food_id}, 1)"
+                                        aria-label="Add one ${item.name}" ${!food || item.quantity >= food.stock ? 'disabled' : ''}>+</button>
+                            </div>
                         </div>
                         <button class="remove-btn" onclick="removeFromCart(${item.food_id})">Remove</button>
                     </div>
                 `;
             }).join('');
 
+            const hasUnavailableItems = cart.some(item => {
+                const food = allFoods.find(menuItem => menuItem.id === item.food_id);
+                return !food || item.quantity > food.stock;
+            });
             let finalTotal = subtotal;
-            let displayTotal = subtotal;
-
-            // Apply promotion discount if any
             if (appliedPromotion) {
                 finalTotal = appliedPromotion.final_total;
-                displayTotal = finalTotal;
             }
 
-            totalAmount.textContent = `$${displayTotal.toFixed(2)}`;
+            totalAmount.textContent = `$${finalTotal.toFixed(2)}`;
             cartTotal.style.display = 'block';
-            checkoutBtn.disabled = false;
+            checkoutBtn.disabled = hasUnavailableItems;
 
-            // Store final total for checkout
-            window.finalTotal = finalTotal;
+            if (hasUnavailableItems) {
+                showCheckoutMessage('Some cart quantities are no longer available. Update or remove those items to continue.', 'error');
+            } else {
+                document.getElementById('checkoutMessage').className = 'message';
+            }
         }
 
         // Setup event listeners
@@ -1104,9 +1176,9 @@
             const email = document.getElementById('customerEmail').value.trim();
             const paymentMethod = document.getElementById('paymentMethod').value;
             const cardLastFour = document.getElementById('cardLastFour').value.trim();
-            const checkoutMessage = document.getElementById('checkoutMessage');
             const checkoutBtn = document.getElementById('checkoutBtn');
             const checkoutSpinner = document.getElementById('checkoutSpinner');
+            const promotionCode = appliedPromotion ? appliedPromotion.code : null;
 
             // Validation
             if (!name) {
@@ -1124,8 +1196,8 @@
                 return;
             }
 
-            if (paymentMethod.includes('card') && !cardLastFour) {
-                showCheckoutMessage('Please enter card last 4 digits', 'error');
+            if (paymentMethod.includes('card') && !/^\d{4}$/.test(cardLastFour)) {
+                showCheckoutMessage('Please enter the 4-digit card suffix', 'error');
                 return;
             }
 
@@ -1141,7 +1213,8 @@
                     items: cart.map(item => ({
                         food_id: item.food_id,
                         quantity: item.quantity
-                    }))
+                    })),
+                    promotion_code: promotionCode
                 };
 
                 const orderResponse = await fetch(`${API_BASE}/orders`, {
@@ -1151,7 +1224,8 @@
                 });
 
                 if (!orderResponse.ok) {
-                    throw new Error('Failed to create order');
+                    const error = await orderResponse.json();
+                    throw new Error(error.detail || 'Failed to create order');
                 }
 
                 const order = await orderResponse.json();
@@ -1160,7 +1234,7 @@
                 const paymentData = {
                     order_id: order.id,
                     payment_method: paymentMethod,
-                    amount: window.finalTotal || cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    amount: order.total_amount,
                     card_last_four: cardLastFour || null
                 };
 
@@ -1171,7 +1245,8 @@
                 });
 
                 if (!paymentResponse.ok) {
-                    throw new Error('Failed to process payment');
+                    const error = await paymentResponse.json();
+                    throw new Error(error.detail || 'Failed to process payment');
                 }
 
                 const payment = await paymentResponse.json();
@@ -1187,7 +1262,8 @@
                 });
 
                 if (!confirmResponse.ok) {
-                    throw new Error('Failed to confirm payment');
+                    const error = await confirmResponse.json();
+                    throw new Error(error.detail || 'Failed to confirm payment');
                 }
 
                 // Success!
@@ -1199,25 +1275,20 @@
                 document.getElementById('cardLastFour').value = '';
                 document.getElementById('appliedPromotion').innerHTML = '';
 
-                const totalAmount = paymentData.amount.toFixed(2);
-                let successMsg = `
-                    Order #${order.id} placed successfully!<br>
-                    Total: $${totalAmount}<br>
-                    Payment Status: ${payment.status}
-                `;
-                
-                if (appliedPromotion) {
-                    successMsg += `<br><small style="color: green;">✓ Applied promo code: ${appliedPromotion.code}</small>`;
-                }
-                
-                document.getElementById('successMessage').innerHTML = successMsg;
+                await loadFoods();
+                let successMsg = `Thank you, ${name}!\nOrder #${order.id} was placed for ${email}.\nTotal: $${order.total_amount.toFixed(2)}\nPayment status: ${payment.status}`;
+                if (promotionCode) successMsg += `\nApplied promo code: ${promotionCode}`;
+                document.getElementById('successMessage').textContent = successMsg;
                 document.getElementById('successModal').classList.add('show');
 
             } catch (err) {
                 console.error('Checkout error:', err);
                 showCheckoutMessage(err.message || 'Checkout failed. Please try again.', 'error');
             } finally {
-                checkoutBtn.disabled = false;
+                checkoutBtn.disabled = cart.length === 0 || cart.some(item => {
+                    const food = allFoods.find(menuItem => menuItem.id === item.food_id);
+                    return !food || item.quantity > food.stock;
+                });
                 checkoutSpinner.style.display = 'none';
             }
         }

@@ -109,9 +109,6 @@ class PromotionService:
         
         final_total = max(0, order_total - discount_amount)
         
-        # Increment promotion usage
-        self.repo.increment_usage(self.db, promotion.id)
-        
         return {
             "is_valid": True,
             "promotion_id": promotion.id,
@@ -123,6 +120,10 @@ class PromotionService:
             "final_total": round(final_total, 2),
             "message": f"Promotion applied successfully! Saved ${discount_amount:.2f}"
         }
+
+    def record_usage(self, promotion_id: int) -> bool:
+        """Record a promotion redemption after an order is created."""
+        return self.repo.increment_usage(self.db, promotion_id)
 
     def get_active_promotions(self) -> list:
         """Get all currently active promotions."""

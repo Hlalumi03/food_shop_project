@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.repositories import OrderRepository, FoodRepository
 from app.schemas import OrderCreate, OrderUpdate
 from app.models import Order
+from app.services.promotion_service import PromotionService
 from typing import List, Optional
 
 
@@ -12,6 +13,7 @@ class OrderService:
     def __init__(self, db: Session):
         self.order_repository = OrderRepository(db)
         self.food_repository = FoodRepository(db)
+        self.promotion_service = PromotionService(db)
     
     def create_order(self, order_data: OrderCreate) -> Optional[Order]:
         """Create a new order with validation and stock management."""
@@ -35,6 +37,16 @@ class OrderService:
             })
             total_amount += food.price * item.quantity
         
+        promotion = None
+        if order_data.promotion_code:
+            promotion = self.promotion_service.apply_promotion(
+                order_data.promotion_code,
+                total_amount
+            )
+            if not promotion["is_valid"]:
+                raise ValueError(promotion["message"])
+            total_amount = promotion["final_total"]
+
         # Create order
         order_dict = {
             "customer_name": order_data.customer_name,
@@ -47,6 +59,9 @@ class OrderService:
         
         order = self.order_repository.create(order_dict)
         
+        if promotion:
+            self.promotion_service.record_usage(promotion["promotion_id"])
+
         # Reduce stock for each item
         for item in order_data.items:
             self.food_repository.decrease_stock(item.food_id, item.quantity)
