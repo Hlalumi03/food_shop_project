@@ -49,6 +49,17 @@ def read_root():
         }
 
 
+@app.get("/checkout", response_class=HTMLResponse)
+def read_checkout():
+    """Serve the dedicated cart review and payment page."""
+    with open(
+        os.path.join(os.path.dirname(__file__), "checkout.html"),
+        "r",
+        encoding="utf-8",
+    ) as f:
+        return f.read()
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint."""
