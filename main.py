@@ -40,7 +40,7 @@ def read_root():
         return {
             "message": "Welcome to Food Shop API",
             "version": settings.PROJECT_VERSION,
-            "docs": f"{settings.API_V1_STR}/docs",
+            "docs": "/docs",
             "frontend": "Frontend not found. Please ensure index.html is in the root directory."
         }
 

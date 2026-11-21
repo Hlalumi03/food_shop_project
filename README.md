@@ -91,12 +91,13 @@ python main.py
 
 Or using uvicorn directly:
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-The API will be available at `http://localhost:8000`
-- API Docs: `http://localhost:8000/api/v1/docs`
-- ReDoc: `http://localhost:8000/api/v1/redoc`
+The frontend and API are served by the same application at `http://localhost:8001/`.
+- API: `http://localhost:8001/api/v1`
+- API Docs: `http://localhost:8001/docs`
+- ReDoc: `http://localhost:8001/redoc`
 
 ## API Endpoints
 
@@ -158,7 +159,7 @@ Payment lifecycle:
 ### Create a Food Item
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/foods" \
+curl -X POST "http://localhost:8001/api/v1/foods" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Margherita Pizza",
@@ -172,7 +173,7 @@ curl -X POST "http://localhost:8000/api/v1/foods" \
 ### Create an Order
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/orders" \
+curl -X POST "http://localhost:8001/api/v1/orders" \
   -H "Content-Type: application/json" \
   -d '{
     "customer_name": "John Doe",
@@ -189,7 +190,7 @@ curl -X POST "http://localhost:8000/api/v1/orders" \
 ### Create a Payment
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/payments" \
+curl -X POST "http://localhost:8001/api/v1/payments" \
   -H "Content-Type: application/json" \
   -d '{
     "order_id": 1,
@@ -202,7 +203,7 @@ curl -X POST "http://localhost:8000/api/v1/payments" \
 ### Confirm a Payment
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/payments/1/confirm" \
+curl -X POST "http://localhost:8001/api/v1/payments/1/confirm" \
   -H "Content-Type: application/json" \
   -d '{
     "transaction_id": "txn_12345678"
@@ -212,25 +213,25 @@ curl -X POST "http://localhost:8000/api/v1/payments/1/confirm" \
 ### Get Payments by Status
 
 ```bash
-curl "http://localhost:8000/api/v1/payments?status=completed"
+curl "http://localhost:8001/api/v1/payments?status=completed"
 ```
 
 ### Get Payments by Method
 
 ```bash
-curl "http://localhost:8000/api/v1/payments?method=credit_card"
+curl "http://localhost:8001/api/v1/payments?method=credit_card"
 ```
 
 ### Refund a Payment
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/payments/1/refund"
+curl -X POST "http://localhost:8001/api/v1/payments/1/refund"
 ```
 
 ### Get Payment Statistics
 
 ```bash
-curl "http://localhost:8000/api/v1/payments/statistics/overview"
+curl "http://localhost:8001/api/v1/payments/statistics/overview"
 ```
 
 ## Database

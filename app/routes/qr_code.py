@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -12,6 +12,7 @@ router = APIRouter()
 @router.get("/foods/{food_id}/qr", response_class=Response)
 def get_food_qr_code(
     food_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Generate QR code for a food item."""
@@ -20,7 +21,9 @@ def get_food_qr_code(
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
     
-    qr_code = QRCodeService.generate_food_qr_code(food_id)
+    qr_code = QRCodeService.generate_food_qr_code(
+        food_id, str(request.base_url).rstrip("/")
+    )
     return Response(
         content=qr_code.getvalue(),
         media_type="image/png"
@@ -30,6 +33,7 @@ def get_food_qr_code(
 @router.get("/foods/{food_id}/qr/page", response_class=HTMLResponse)
 def get_food_qr_page(
     food_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Get a page displaying the QR code for a food item."""
@@ -38,7 +42,9 @@ def get_food_qr_page(
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
     
-    qr_base64 = QRCodeService.generate_food_qr_code_base64(food_id)
+    qr_base64 = QRCodeService.generate_food_qr_code_base64(
+        food_id, str(request.base_url).rstrip("/")
+    )
     
     html = f"""
     <!DOCTYPE html>
@@ -148,16 +154,20 @@ def get_food_qr_page(
 
 
 @router.get("/website/qr", response_class=Response)
-def get_website_qr():
+def get_website_qr(request: Request):
     """Generate a QR code that links to the website root."""
-    qr_code = QRCodeService.generate_website_qr_code()
+    qr_code = QRCodeService.generate_website_qr_code(
+        str(request.base_url).rstrip("/")
+    )
     return Response(content=qr_code.getvalue(), media_type="image/png")
 
 
 @router.get("/website/qr/page", response_class=HTMLResponse)
-def get_website_qr_page():
+def get_website_qr_page(request: Request):
     """Return a simple HTML page showing the website QR code and a link."""
-    qr_base64 = QRCodeService.generate_website_qr_code_base64()
+    qr_base64 = QRCodeService.generate_website_qr_code_base64(
+        str(request.base_url).rstrip("/")
+    )
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -188,6 +198,7 @@ def get_website_qr_page():
 @router.get("/orders/{order_id}/qr", response_class=Response)
 def get_order_qr_code(
     order_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Generate QR code for an order."""
@@ -196,7 +207,9 @@ def get_order_qr_code(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    qr_code = QRCodeService.generate_order_qr_code(order_id)
+    qr_code = QRCodeService.generate_order_qr_code(
+        order_id, str(request.base_url).rstrip("/")
+    )
     return Response(
         content=qr_code.getvalue(),
         media_type="image/png"
@@ -206,6 +219,7 @@ def get_order_qr_code(
 @router.get("/orders/{order_id}/qr/page", response_class=HTMLResponse)
 def get_order_qr_page(
     order_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Get a page displaying the QR code for an order."""
@@ -214,7 +228,9 @@ def get_order_qr_page(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    qr_base64 = QRCodeService.generate_order_qr_code_base64(order_id)
+    qr_base64 = QRCodeService.generate_order_qr_code_base64(
+        order_id, str(request.base_url).rstrip("/")
+    )
     
     html = f"""
     <!DOCTYPE html>
@@ -336,7 +352,7 @@ def get_order_qr_page(
             </div>
             <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center;">
                 <a href="/api/v1/orders" class="button">Back to Orders</a>
-                <a href="/qr/orders/{order_id}/payment/page" class="button" style="background: #28a745;">Pay Now</a>
+                <a href="/api/v1/qr/orders/{order_id}/payment/page" class="button" style="background: #28a745;">Pay Now</a>
             </div>
         </div>
     </body>
@@ -348,6 +364,7 @@ def get_order_qr_page(
 @router.get("/orders/{order_id}/payment/page", response_class=HTMLResponse)
 def get_order_payment_qr_page(
     order_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Get a page displaying payment QR for an order."""
@@ -375,7 +392,9 @@ def get_order_payment_qr_page(
         # Use the first pending payment, or the most recent one
         payment = next((p for p in payments if p.status == "pending"), payments[-1])
     
-    qr_base64 = QRCodeService.generate_payment_qr_code_base64(payment.id)
+    qr_base64 = QRCodeService.generate_payment_qr_code_base64(
+        payment.id, str(request.base_url).rstrip("/")
+    )
     
     html = f"""
     <!DOCTYPE html>
@@ -562,7 +581,7 @@ def get_order_payment_qr_page(
             </div>
             
             <div class="button-group">
-                <a href="/qr/orders/{order_id}/page" class="button secondary">Back to Order</a>
+                <a href="/api/v1/qr/orders/{order_id}/qr/page" class="button secondary">Back to Order</a>
                 <a href="/api/v1/orders" class="button">All Orders</a>
             </div>
         </div>
@@ -575,6 +594,7 @@ def get_order_payment_qr_page(
 @router.get("/payments/{payment_id}/qr", response_class=Response)
 def get_payment_qr_code(
     payment_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Generate QR code for a payment (scan to pay)."""
@@ -583,7 +603,9 @@ def get_payment_qr_code(
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
     
-    qr_code = QRCodeService.generate_payment_qr_code(payment_id)
+    qr_code = QRCodeService.generate_payment_qr_code(
+        payment_id, str(request.base_url).rstrip("/")
+    )
     return Response(
         content=qr_code.getvalue(),
         media_type="image/png"
@@ -593,6 +615,7 @@ def get_payment_qr_code(
 @router.get("/payments/{payment_id}/qr/page", response_class=HTMLResponse)
 def get_payment_qr_page(
     payment_id: int,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """Get a page displaying the scan-to-pay QR code for a payment."""
@@ -601,7 +624,9 @@ def get_payment_qr_page(
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
     
-    qr_base64 = QRCodeService.generate_payment_qr_code_base64(payment_id)
+    qr_base64 = QRCodeService.generate_payment_qr_code_base64(
+        payment_id, str(request.base_url).rstrip("/")
+    )
     status_class = payment.status.lower()
     
     html = f"""
@@ -859,7 +884,7 @@ def display_foods_with_qr():
                                 <p><strong>Category:</strong> ${food.category}</p>
                                 <p><strong>Stock:</strong> ${food.stock}</p>
                             </div>
-                            <a href="/qr/foods/${food.id}/page" class="button">Show QR Code</a>
+                            <a href="/api/v1/qr/foods/${food.id}/qr/page" class="button">Show QR Code</a>
                         `;
                         foodGrid.appendChild(card);
                     });

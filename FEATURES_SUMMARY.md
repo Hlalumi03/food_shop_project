@@ -80,8 +80,8 @@ start.bat
 ### What Starts
 | Component | URL | Port |
 |-----------|-----|------|
-| Frontend | http://localhost:3000/index.html | 3000 |
-| API | http://localhost:8001 | 8001 |
+| Frontend | http://localhost:8001/ | 8001 |
+| API | http://localhost:8001/api/v1 | 8001 |
 | API Docs | http://localhost:8001/docs | 8001 |
 | Database | ./food_shop.db | SQLite |
 
@@ -89,7 +89,7 @@ start.bat
 
 ```
 1. BROWSE
-   ↓ Visit http://localhost:3000/index.html
+   ↓ Visit http://localhost:8001/
    ↓ See menu with 12 food items
    ↓ See active promotions in sidebar
 
@@ -405,8 +405,8 @@ The frontend uses responsive CSS Grid and Flexbox
 - Applied promotion display
 - Discount visualization
 
-✅ **Multi-Service Launcher**
-- Start all services with one command
+✅ **Single-Server Launcher**
+- Serve the frontend and API from one FastAPI server
 - Automatic database initialization
 - Graceful shutdown
 - Cross-platform support
@@ -422,7 +422,7 @@ The frontend uses responsive CSS Grid and Flexbox
 
 2. **Open the browser:**
    ```
-   http://localhost:3000/index.html
+   http://localhost:8001/
    ```
 
 3. **Test features:**
@@ -501,7 +501,7 @@ curl http://localhost:8001/api/v1/promotions
 ## ✅ Checklist - Everything Works?
 
 - [ ] Server starts with `.\start.ps1`
-- [ ] Frontend loads at `http://localhost:3000/index.html`
+- [ ] Frontend loads at `http://localhost:8001/`
 - [ ] Can see 12 food items
 - [ ] Can see 5 promotions in sidebar
 - [ ] QR code buttons work (📱)

@@ -84,49 +84,55 @@ class QRCodeService:
         return f"data:image/png;base64,{img_base64}"
     
     @staticmethod
-    def generate_food_qr_code(food_id: int) -> io.BytesIO:
+    def generate_food_qr_code(food_id: int, base_url: Optional[str] = None) -> io.BytesIO:
         """Generate QR code for a food item."""
-        url = f"{settings.API_BASE_URL}/foods/{food_id}"
+        url = QRCodeService._api_url(f"foods/{food_id}", base_url)
         return QRCodeService.generate_qr_code(url)
     
     @staticmethod
-    def generate_food_qr_code_base64(food_id: int) -> str:
+    def generate_food_qr_code_base64(food_id: int, base_url: Optional[str] = None) -> str:
         """Generate QR code for a food item as base64."""
-        url = f"{settings.API_BASE_URL}/foods/{food_id}"
+        url = QRCodeService._api_url(f"foods/{food_id}", base_url)
         return QRCodeService.generate_qr_code_base64(url)
     
     @staticmethod
-    def generate_payment_qr_code(payment_id: int) -> io.BytesIO:
+    def generate_payment_qr_code(payment_id: int, base_url: Optional[str] = None) -> io.BytesIO:
         """Generate QR code for a payment (scan-to-pay)."""
-        url = f"{settings.API_BASE_URL}/pay/{payment_id}"
+        url = QRCodeService._api_url(f"payments/{payment_id}", base_url)
         return QRCodeService.generate_qr_code(url)
     
     @staticmethod
-    def generate_payment_qr_code_base64(payment_id: int) -> str:
+    def generate_payment_qr_code_base64(payment_id: int, base_url: Optional[str] = None) -> str:
         """Generate QR code for a payment as base64."""
-        url = f"{settings.API_BASE_URL}/pay/{payment_id}"
+        url = QRCodeService._api_url(f"payments/{payment_id}", base_url)
         return QRCodeService.generate_qr_code_base64(url)
     
     @staticmethod
-    def generate_order_qr_code(order_id: int) -> io.BytesIO:
+    def generate_order_qr_code(order_id: int, base_url: Optional[str] = None) -> io.BytesIO:
         """Generate QR code for an order."""
-        url = f"{settings.API_BASE_URL}/orders/{order_id}"
+        url = QRCodeService._api_url(f"orders/{order_id}", base_url)
         return QRCodeService.generate_qr_code(url)
     
     @staticmethod
-    def generate_order_qr_code_base64(order_id: int) -> str:
+    def generate_order_qr_code_base64(order_id: int, base_url: Optional[str] = None) -> str:
         """Generate QR code for an order as base64."""
-        url = f"{settings.API_BASE_URL}/orders/{order_id}"
+        url = QRCodeService._api_url(f"orders/{order_id}", base_url)
         return QRCodeService.generate_qr_code_base64(url)
 
     @staticmethod
-    def generate_website_qr_code() -> io.BytesIO:
+    def generate_website_qr_code(base_url: Optional[str] = None) -> io.BytesIO:
         """Generate QR code that points to the website root."""
-        url = f"{settings.API_BASE_URL}/"
+        url = (base_url or settings.API_BASE_URL).rstrip("/") + "/"
         return QRCodeService.generate_qr_code(url)
 
     @staticmethod
-    def generate_website_qr_code_base64() -> str:
+    def generate_website_qr_code_base64(base_url: Optional[str] = None) -> str:
         """Generate QR code for the website root as base64."""
-        url = f"{settings.API_BASE_URL}/"
+        url = (base_url or settings.API_BASE_URL).rstrip("/") + "/"
         return QRCodeService.generate_qr_code_base64(url)
+
+    @staticmethod
+    def _api_url(path: str, base_url: Optional[str] = None) -> str:
+        """Build an absolute URL for an API resource."""
+        origin = (base_url or settings.API_BASE_URL).rstrip("/")
+        return f"{origin}{settings.API_V1_STR}/{path.lstrip('/')}"

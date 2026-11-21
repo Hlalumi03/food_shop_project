@@ -1,5 +1,5 @@
 #!/bin/bash
-# Food Shop - Multi-Service Launcher (Linux/Mac)
+# Food Shop - Single-Server Launcher (Linux/Mac)
 
 echo ""
 echo "========================================================"
@@ -12,11 +12,11 @@ echo "Activating virtual environment..."
 source .venv/bin/activate
 
 # Run the Python launcher
-echo "Starting services on different ports..."
+echo "Starting the frontend and API on one server..."
 echo ""
-echo "Frontend:  http://localhost:3000/index.html"
-echo "API:       http://localhost:8001"
-echo "API Docs:  http://localhost:8001/docs"
+echo "Frontend:  http://127.0.0.1:8001/"
+echo "API:       http://127.0.0.1:8001/api/v1"
+echo "API Docs:  http://127.0.0.1:8001/docs"
 echo ""
 echo "Press Ctrl+C to stop all services."
 echo ""

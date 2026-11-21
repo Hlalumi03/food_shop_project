@@ -42,10 +42,8 @@ A fully functional web-based food ordering system that integrates with your Fast
 
 ## How to Use
 
-### 1. Start the API Server
+### 1. Start the Application
 ```bash
-cd c:\Users\sabas\Desktop\FOOD
-source .venv/Scripts/activate  # or activate.bat on Windows
 python -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
 ```
 
@@ -54,11 +52,15 @@ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
 python seed_foods.py
 ```
 
-### 3. Access the Frontend
+### 3. Access the Frontend and API
 Open your browser and navigate to:
 ```
-http://localhost:8001/
+http://127.0.0.1:8001/
 ```
+
+The frontend and `/api/v1` endpoints are served by this same FastAPI
+application. The frontend uses same-origin API paths and needs no separate API
+port configuration.
 
 ## Using the Frontend
 
@@ -127,11 +129,12 @@ http://localhost:8001/
 ## Troubleshooting
 
 ### Port already in use
-If port 8001 is already in use:
+If port 8001 is already in use, choose another port:
 ```bash
 python -m uvicorn main:app --reload --host 127.0.0.1 --port 8002
 ```
-Then update the API_BASE URL in index.html to port 8002.
+Then open `http://127.0.0.1:8002/`. The frontend will automatically use the
+API on that same port.
 
 ### CORS Errors
 The API is configured with CORS enabled for all origins, so cross-origin requests should work.

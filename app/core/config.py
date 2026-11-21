@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     # API
     API_V1_STR: str = "/api/v1"
-    API_BASE_URL: str = "http://localhost:8000"
+    API_BASE_URL: str = "http://localhost:8001"
     PROJECT_NAME: str = "Food Shop API"
     PROJECT_VERSION: str = "1.0.0"
     
