@@ -34,7 +34,11 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 def read_root():
     """Root endpoint - serves the frontend."""
     try:
-        with open(os.path.join(os.path.dirname(__file__), "index.html"), "r") as f:
+        with open(
+            os.path.join(os.path.dirname(__file__), "index.html"),
+            "r",
+            encoding="utf-8",
+        ) as f:
             return f.read()
     except FileNotFoundError:
         return {
@@ -293,7 +297,7 @@ def qr_foods_display():
                 <div class="action-button">
                     <h3>API Documentation</h3>
                     <p>Explore all available API endpoints</p>
-                    <a href="/api/v1/docs">API Docs</a>
+                    <a href="/docs">API Docs</a>
                 </div>
                 <div class="action-button">
                     <h3>Direct QR Endpoints</h3>

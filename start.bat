@@ -8,7 +8,7 @@ echo.
 
 REM Activate virtual environment
 echo Activating virtual environment...
-call .venv\Scripts\activate.bat
+call venv\Scripts\activate.bat
 
 REM Run the Python launcher
 echo Starting the frontend and API on one server...

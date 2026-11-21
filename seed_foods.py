@@ -109,12 +109,12 @@ def seed_foods():
         db.add_all(foods)
         db.commit()
         
-        print(f"✅ Successfully seeded {len(foods)} food items!")
+        print(f"[OK] Successfully seeded {len(foods)} food items!")
         for food in foods:
             print(f"   - {food.name} (${food.price}) - Stock: {food.stock}")
         
     except Exception as e:
-        print(f"❌ Error seeding database: {e}")
+        print(f"[ERROR] Error seeding database: {e}")
         db.rollback()
     finally:
         db.close()
@@ -193,12 +193,12 @@ def seed_promotions():
         db.add_all(promotions)
         db.commit()
         
-        print(f"\n✅ Successfully seeded {len(promotions)} promotions!")
+        print(f"\n[OK] Successfully seeded {len(promotions)} promotions!")
         for promo in promotions:
             print(f"   - {promo.code}: {promo.title} ({promo.discount_value}% off)" if promo.discount_type == "percentage" else f"   - {promo.code}: {promo.title} (${promo.discount_value} off)")
         
     except Exception as e:
-        print(f"❌ Error seeding promotions: {e}")
+        print(f"[ERROR] Error seeding promotions: {e}")
         db.rollback()
     finally:
         db.close()

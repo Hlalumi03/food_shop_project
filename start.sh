@@ -9,7 +9,7 @@ echo ""
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source .venv/bin/activate
+source venv/bin/activate
 
 # Run the Python launcher
 echo "Starting the frontend and API on one server..."

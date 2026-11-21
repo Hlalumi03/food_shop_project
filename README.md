@@ -75,10 +75,15 @@ FOOD/
 2. Create a virtual environment:
 ```bash
 python -m venv venv
-source venv/Scripts/activate  # On Windows
 ```
 
-3. Install dependencies:
+3. Activate the environment:
+
+   - Windows PowerShell: `.\venv\Scripts\Activate.ps1`
+   - Windows Command Prompt: `venv\Scripts\activate.bat`
+   - macOS/Linux: `source venv/bin/activate`
+
+4. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -131,6 +136,29 @@ The frontend and API are served by the same application at `http://localhost:800
 - `POST /api/v1/payments/{payment_id}/refund` - Refund a completed payment
 - `DELETE /api/v1/payments/{payment_id}` - Delete a payment
 - `GET /api/v1/payments/statistics/overview` - Get payment statistics
+
+### Promotion Management
+
+- `POST /api/v1/promotions` - Create a promotion
+- `GET /api/v1/promotions` - List promotions (active only by default; set `active_only=false` to include inactive promotions)
+- `GET /api/v1/promotions/active/all` - List currently active promotions
+- `GET /api/v1/promotions/{promotion_id}` - Get a promotion
+- `PUT /api/v1/promotions/{promotion_id}` - Update a promotion
+- `DELETE /api/v1/promotions/{promotion_id}` - Delete a promotion
+- `POST /api/v1/promotions/apply` - Validate a code and calculate its discount
+
+### QR Codes
+
+- `GET /api/v1/qr/foods/{food_id}/qr` - Food QR image
+- `GET /api/v1/qr/foods/{food_id}/qr/page` - Food QR page
+- `GET /api/v1/qr/orders/{order_id}/qr` - Order QR image
+- `GET /api/v1/qr/orders/{order_id}/qr/page` - Order QR page
+- `GET /api/v1/qr/orders/{order_id}/payment/page` - Order payment page
+- `GET /api/v1/qr/payments/{payment_id}/qr` - Payment QR image
+- `GET /api/v1/qr/payments/{payment_id}/qr/page` - Payment QR page
+- `GET /api/v1/qr/website/qr` - Website QR image
+- `GET /api/v1/qr/website/qr/page` - Website QR page
+- `GET /api/v1/qr/foods/qr/display` - Food QR management page
 
 ## Payment Methods
 

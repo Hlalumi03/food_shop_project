@@ -61,11 +61,11 @@ class ApplyPromotion(BaseModel):
 
 class PromotionResult(BaseModel):
     """DTO for promotion application result."""
-    promotion_id: int
-    code: str
-    title: str
-    discount_type: str
-    discount_value: float
+    promotion_id: Optional[int] = None
+    code: Optional[str] = None
+    title: Optional[str] = None
+    discount_type: Optional[str] = None
+    discount_value: Optional[float] = None
     discount_amount: float
     final_total: float
     is_valid: bool

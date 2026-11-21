@@ -8,7 +8,7 @@ Write-Host ""
 
 # Activate virtual environment
 Write-Host "Activating virtual environment..." -ForegroundColor Yellow
-& .\.venv\Scripts\Activate.ps1
+& .\venv\Scripts\Activate.ps1
 
 # Run the Python launcher
 Write-Host "Starting the frontend and API on one server..." -ForegroundColor Yellow

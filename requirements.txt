@@ -1,9 +1,12 @@
 FastAPI==0.115.0
 uvicorn==0.30.0
 SQLAlchemy==2.0.32
-pydantic==2.7.0
+# Pydantic Core and Pillow versions with wheels for Python 3.13.
+pydantic==2.7.0; python_version < "3.13"
+pydantic==2.10.0; python_version >= "3.13"
 pydantic-settings==2.3.0
 email-validator==2.1.0
 qrcode==7.4.2
-pillow==10.1.0
+pillow==10.1.0; python_version < "3.13"
+pillow==11.0.0; python_version >= "3.13"
 python-multipart==0.0.6
