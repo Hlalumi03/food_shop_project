@@ -101,6 +101,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8001
 
 The frontend and API are served by the same application at `http://localhost:8001/`.
 - API: `http://localhost:8001/api/v1`
+- Cart review and payment page: `http://localhost:8001/checkout`
 - API Docs: `http://localhost:8001/docs`
 - ReDoc: `http://localhost:8001/redoc`
 

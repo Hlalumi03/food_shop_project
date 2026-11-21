@@ -135,6 +135,7 @@
             background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
             transition: all 0.5s;
             transform: rotate(45deg);
+            pointer-events: none;
         }
 
         .food-card:hover::before {
@@ -732,11 +733,16 @@
             <div class="sidebar">
                 <!-- Cart Section -->
                 <div class="cart-section">
-                    <div class="section-title">🛒 Cart</div>
+                    <div class="section-title">🛒 Cart (<span id="cartCount">0</span>)</div>
                     <div id="cartItems" class="cart-empty">Your cart is empty</div>
                     <div id="cartTotal" class="cart-total" style="display: none;">
                         Total: <span id="totalAmount">$0.00</span>
                     </div>
+                    <div id="checkoutMessage" class="message"></div>
+                    <div id="appliedPromotion"></div>
+                    <button class="checkout-btn" id="goToCheckout" disabled>
+                        Review cart and pay
+                    </button>
                 </div>
 
                 <!-- Promotions Section -->
@@ -744,71 +750,15 @@
                     <div class="section-title">🎉 Active Promotions</div>
                     <div id="promotionsList" class="promotions-list"></div>
                 </div>
-
-                <!-- Checkout Section -->
-                <div class="checkout-section">
-                    <div class="section-title">Checkout</div>
-                    <div id="checkoutMessage" class="message"></div>
-
-                    <div id="appliedPromotion"></div>
-
-                    <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" id="customerName" placeholder="Your name" autocomplete="name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="customerEmail" placeholder="your@email.com" autocomplete="email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Promo Code</label>
-                        <div style="display: flex; gap: 5px;">
-                            <input type="text" id="promoCode" placeholder="Enter promo code" style="flex: 1;">
-                            <button id="applyPromoBtn" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Apply</button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <select id="paymentMethod">
-                            <option value="credit_card">Credit Card</option>
-                            <option value="debit_card">Debit Card</option>
-                            <option value="paypal">PayPal</option>
-                            <option value="apple_pay">Apple Pay</option>
-                            <option value="google_pay">Google Pay</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cash">Cash</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="cardField" style="display: none;">
-                        <label>Card Last 4 Digits</label>
-                        <input type="text" id="cardLastFour" placeholder="1234" maxlength="4">
-                    </div>
-
-                    <button class="checkout-btn" id="checkoutBtn" disabled>
-                        <span id="checkoutBtnText">Place Order</span>
-                        <div class="loading-spinner" id="checkoutSpinner" style="display: none; margin-left: 10px;"></div>
-                    </button>
-                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Success Modal -->
-    <div class="success-modal" id="successModal">
-        <div class="modal-content">
-            <h2>✓ Order Placed Successfully!</h2>
-            <p id="successMessage"></p>
-            <button class="modal-close-btn" onclick="closeSuccessModal()">Continue Shopping</button>
         </div>
     </div>
 
     <script>
         // Use the API served by the same origin as this page.
         const API_BASE = '/api/v1';
+        const CART_STORAGE_KEY = 'foodShopCart';
+        const PROMOTION_STORAGE_KEY = 'foodShopPromotion';
         let cart = [];
         let allFoods = [];
         let appliedPromotion = null;
@@ -817,9 +767,62 @@
 
         // Initialize the app
         function init() {
+            restoreCart();
+            restoreAppliedPromotion();
             loadFoods();
             loadPromotions();
             setupEventListeners();
+        }
+
+        function restoreCart() {
+            try {
+                const storedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+                if (Array.isArray(storedCart)) {
+                    cart = storedCart.filter(item =>
+                        item &&
+                        Number.isInteger(item.food_id) &&
+                        Number.isInteger(item.quantity) &&
+                        item.quantity > 0
+                    );
+                }
+            } catch (error) {
+                console.error('Unable to restore the saved cart:', error);
+                localStorage.removeItem(CART_STORAGE_KEY);
+            }
+        }
+
+        function persistCart() {
+            try {
+                localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+            } catch (error) {
+                console.error('Unable to save the cart:', error);
+                showCheckoutMessage('Your cart could not be saved in this browser.', 'error');
+            }
+        }
+
+        function restoreAppliedPromotion() {
+            try {
+                const storedPromotion = JSON.parse(localStorage.getItem(PROMOTION_STORAGE_KEY) || 'null');
+                if (storedPromotion && storedPromotion.is_valid && typeof storedPromotion.code === 'string') {
+                    appliedPromotion = storedPromotion;
+                }
+            } catch (error) {
+                console.error('Unable to restore the saved promotion:', error);
+                localStorage.removeItem(PROMOTION_STORAGE_KEY);
+            }
+        }
+
+        function persistAppliedPromotion() {
+            try {
+                if (appliedPromotion) {
+                    localStorage.setItem(PROMOTION_STORAGE_KEY, JSON.stringify(appliedPromotion));
+                } else {
+                    localStorage.removeItem(PROMOTION_STORAGE_KEY);
+                }
+            } catch (error) {
+                console.error('Unable to save the promotion:', error);
+                showCheckoutMessage('Your promotion could not be saved in this browser.', 'error');
+            }
         }
 
         // Load foods from API
@@ -837,6 +840,15 @@
                 allFoods = await response.json();
                 displayFoods(allFoods);
                 generateCategoryFilters();
+                cart = cart.map(item => {
+                    const food = allFoods.find(menuItem => menuItem.id === item.food_id);
+                    return food ? { ...item, name: food.name, price: food.price } : item;
+                });
+                if (appliedPromotion && cart.length > 0) {
+                    await applyPromotionCode(appliedPromotion.code);
+                } else {
+                    updateCart();
+                }
             } catch (err) {
                 error.textContent = 'Failed to load menu. Make sure the API is running.';
                 error.style.display = 'block';
@@ -969,6 +981,7 @@
                 });
             }
 
+            persistCart();
             updateCart();
             qtyInput.value = 1;
             showCheckoutMessage(`${food.name} added to your cart.`, 'success');
@@ -984,6 +997,7 @@
 
             clearPromotionForCartChange();
             item.quantity = quantity;
+            persistCart();
             updateCart();
         }
 
@@ -991,6 +1005,7 @@
         function removeFromCart(foodId) {
             clearPromotionForCartChange();
             cart = cart.filter(item => item.food_id !== foodId);
+            persistCart();
             updateCart();
         }
 
@@ -998,6 +1013,7 @@
             if (!appliedPromotion) return;
             appliedPromotion = null;
             document.getElementById('appliedPromotion').innerHTML = '';
+            persistAppliedPromotion();
         }
 
         // Update cart display
@@ -1005,12 +1021,20 @@
             const cartItems = document.getElementById('cartItems');
             const cartTotal = document.getElementById('cartTotal');
             const totalAmount = document.getElementById('totalAmount');
-            const checkoutBtn = document.getElementById('checkoutBtn');
+            const checkoutBtn = document.getElementById('goToCheckout');
+            document.getElementById('cartCount').textContent = cart.reduce(
+                (count, item) => count + item.quantity,
+                0
+            );
 
             if (cart.length === 0) {
                 cartItems.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
                 cartTotal.style.display = 'none';
                 checkoutBtn.disabled = true;
+                document.getElementById('appliedPromotion').innerHTML = '';
+                appliedPromotion = null;
+                persistAppliedPromotion();
+                persistCart();
                 document.getElementById('checkoutMessage').textContent = '';
                 document.getElementById('checkoutMessage').className = 'message';
                 return;
@@ -1051,6 +1075,7 @@
             totalAmount.textContent = `$${finalTotal.toFixed(2)}`;
             cartTotal.style.display = 'block';
             checkoutBtn.disabled = hasUnavailableItems;
+            persistCart();
 
             if (hasUnavailableItems) {
                 showCheckoutMessage('Some cart quantities are no longer available. Update or remove those items to continue.', 'error');
@@ -1061,22 +1086,9 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            const paymentMethodSelect = document.getElementById('paymentMethod');
-            const cardField = document.getElementById('cardField');
-
-            paymentMethodSelect.addEventListener('change', (e) => {
-                if (e.target.value.includes('card')) {
-                    cardField.style.display = 'block';
-                } else {
-                    cardField.style.display = 'none';
-                }
-            });
-
-            document.getElementById('checkoutBtn').addEventListener('click', checkout);
-            document.getElementById('applyPromoBtn').addEventListener('click', () => {
-                const code = document.getElementById('promoCode').value.trim();
-                if (code) {
-                    applyPromotionCode(code);
+            document.getElementById('goToCheckout').addEventListener('click', () => {
+                if (cart.length > 0) {
+                    window.location.href = '/checkout';
                 }
             });
         }
@@ -1138,9 +1150,13 @@
 
                 if (result.is_valid) {
                     appliedPromotion = result;
+                    persistAppliedPromotion();
                     displayAppliedPromotion(result);
-                    document.getElementById('promoCode').value = '';
                 } else {
+                    appliedPromotion = null;
+                    persistAppliedPromotion();
+                    document.getElementById('appliedPromotion').innerHTML = '';
+                    updateCart();
                     showCheckoutMessage(result.message, 'error');
                 }
             } catch (err) {
@@ -1165,146 +1181,16 @@
         // Remove applied promotion
         function removePromotion() {
             appliedPromotion = null;
+            persistAppliedPromotion();
             document.getElementById('appliedPromotion').innerHTML = '';
             updateCart();
         }
 
-        // Checkout process
-        async function checkout() {
-            const name = document.getElementById('customerName').value.trim();
-            const email = document.getElementById('customerEmail').value.trim();
-            const paymentMethod = document.getElementById('paymentMethod').value;
-            const cardLastFour = document.getElementById('cardLastFour').value.trim();
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            const checkoutSpinner = document.getElementById('checkoutSpinner');
-            const promotionCode = appliedPromotion ? appliedPromotion.code : null;
-
-            // Validation
-            if (!name) {
-                showCheckoutMessage('Please enter your name', 'error');
-                return;
-            }
-
-            if (!email || !isValidEmail(email)) {
-                showCheckoutMessage('Please enter a valid email', 'error');
-                return;
-            }
-
-            if (cart.length === 0) {
-                showCheckoutMessage('Your cart is empty', 'error');
-                return;
-            }
-
-            if (paymentMethod.includes('card') && !/^\d{4}$/.test(cardLastFour)) {
-                showCheckoutMessage('Please enter the 4-digit card suffix', 'error');
-                return;
-            }
-
-            // Disable button and show loading
-            checkoutBtn.disabled = true;
-            checkoutSpinner.style.display = 'inline-block';
-
-            try {
-                // Create order
-                const orderData = {
-                    customer_name: name,
-                    customer_email: email,
-                    items: cart.map(item => ({
-                        food_id: item.food_id,
-                        quantity: item.quantity
-                    })),
-                    promotion_code: promotionCode
-                };
-
-                const orderResponse = await fetch(`${API_BASE}/orders`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderData)
-                });
-
-                if (!orderResponse.ok) {
-                    const error = await orderResponse.json();
-                    throw new Error(error.detail || 'Failed to create order');
-                }
-
-                const order = await orderResponse.json();
-
-                // Create payment
-                const paymentData = {
-                    order_id: order.id,
-                    payment_method: paymentMethod,
-                    amount: order.total_amount,
-                    card_last_four: cardLastFour || null
-                };
-
-                const paymentResponse = await fetch(`${API_BASE}/payments`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(paymentData)
-                });
-
-                if (!paymentResponse.ok) {
-                    const error = await paymentResponse.json();
-                    throw new Error(error.detail || 'Failed to process payment');
-                }
-
-                const payment = await paymentResponse.json();
-
-                // Confirm payment
-                const confirmResponse = await fetch(`${API_BASE}/payments/${payment.id}/confirm`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        transaction_id: `TXN-${Date.now()}`,
-                        reference_number: `REF-${order.id}`
-                    })
-                });
-
-                if (!confirmResponse.ok) {
-                    const error = await confirmResponse.json();
-                    throw new Error(error.detail || 'Failed to confirm payment');
-                }
-
-                // Success!
-                cart = [];
-                appliedPromotion = null;
-                updateCart();
-                document.getElementById('customerName').value = '';
-                document.getElementById('customerEmail').value = '';
-                document.getElementById('cardLastFour').value = '';
-                document.getElementById('appliedPromotion').innerHTML = '';
-
-                await loadFoods();
-                let successMsg = `Thank you, ${name}!\nOrder #${order.id} was placed for ${email}.\nTotal: $${order.total_amount.toFixed(2)}\nPayment status: ${payment.status}`;
-                if (promotionCode) successMsg += `\nApplied promo code: ${promotionCode}`;
-                document.getElementById('successMessage').textContent = successMsg;
-                document.getElementById('successModal').classList.add('show');
-
-            } catch (err) {
-                console.error('Checkout error:', err);
-                showCheckoutMessage(err.message || 'Checkout failed. Please try again.', 'error');
-            } finally {
-                checkoutBtn.disabled = cart.length === 0 || cart.some(item => {
-                    const food = allFoods.find(menuItem => menuItem.id === item.food_id);
-                    return !food || item.quantity > food.stock;
-                });
-                checkoutSpinner.style.display = 'none';
-            }
-        }
-
         // Utility functions
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
         function showCheckoutMessage(message, type) {
             const messageEl = document.getElementById('checkoutMessage');
             messageEl.textContent = message;
             messageEl.className = `message ${type}`;
-        }
-
-        function closeSuccessModal() {
-            document.getElementById('successModal').classList.remove('show');
         }
 
         // Initialize app when page loads
